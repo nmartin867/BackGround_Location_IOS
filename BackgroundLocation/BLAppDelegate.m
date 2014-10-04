@@ -8,11 +8,14 @@
 
 #import "BLAppDelegate.h"
 #import "BLMessageProvider.h"
+#import <CoreLocation/CoreLocation.h>
 
-@interface BLAppDelegate(){
+
+@interface BLAppDelegate()<CLLocationManagerDelegate>{
     NSTimer *backgroundTimer;
+   
 }
-
+ @property(nonatomic, strong)CLLocationManager *locationManager;
 @end
 
 
@@ -53,10 +56,39 @@
     // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
 }
 
--(void)timer{
-   
+-(void)getLocation{
+    if (nil == self.locationManager)
+        self.locationManager = [[CLLocationManager alloc] init];
+    
+    self.locationManager.delegate = self;
+    self.locationManager.desiredAccuracy = kCLLocationAccuracyBest;
+    [self.locationManager startUpdatingLocation];
 }
 
+-(void)timer{
+   [self getLocation];
+}
+
+
+
+#pragma mark - CLLocation Delegate Methods
+- (void)locationManager:(CLLocationManager *)manager didFailWithError:(NSError *)error{
+    
+}
+
+- (void)locationManager:(CLLocationManager *)manager
+     didUpdateLocations:(NSArray *)locations {
+    // If it's a relatively recent event, turn off updates to save power.
+    CLLocation* location = [locations lastObject];
+    
+    // If the event is recent, do something with it.
+    NSString *longitude = [NSString stringWithFormat:@"%+.6f", location.coordinate.longitude];
+    NSString *latitude = [NSString stringWithFormat:@"%+.6f", location.coordinate.latitude];
+   [[BLMessageProvider sharedProvider]sendLocation:longitude latitude:latitude applicationState:@"Background"];
+    [manager stopUpdatingLocation];
+    
+    
+}
 
 
 @end
